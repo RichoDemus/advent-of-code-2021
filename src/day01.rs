@@ -1,48 +1,25 @@
-#[aoc(day1, part1)]
-fn part1_error_scanning_rate(input: &str) -> u64 {
-    let mut last_number = None;
-    let mut increases = 0;
-    for measure in input.lines() {
-        let number: u64 = measure.parse().expect("Unable to parse str to u64");
-
-        if last_number.is_none() {
-            last_number = Some(number);
-            continue;
-        }
-        let prev = last_number.unwrap();
-        if number > prev {
-            increases += 1;
-        }
-        last_number = Some(number);
-    }
-    increases
+#[aoc_generator(day1)]
+fn parse_input(input: &str) -> Vec<u64> {
+    input.lines().map(|line| line.parse().unwrap()).collect()
 }
 
-#[aoc(day1, part1, rewrite)]
-fn part1_error_scanning_rate_match(input: &str) -> u64 {
-    let mut last_number = None;
+#[aoc(day1, part1)]
+fn part1_error_scanning_rate(input: &[u64]) -> u64 {
+    let mut previous_number = input[0];
     let mut increases = 0;
-    for measure in input.lines() {
-        let number: u64 = measure.parse().expect("Unable to parse str to u64");
-
-        match last_number {
-            None => (),
-            Some(previous_number) if number > previous_number => {
-                increases += 1;
-            }
-            Some(_) => (),
-        };
-        last_number = Some(number);
+    for number in input.iter().skip(1) {
+        if *number > previous_number {
+            increases += 1;
+        }
+        previous_number = *number;
     }
     increases
 }
 
 #[aoc(day1, part1, fold)]
-fn part1_error_scanning_rate_fold(input: &str) -> u64 {
-    let (increases, _) = input
-        .lines()
-        .map(|s| s.parse::<u64>().expect("Unable to parse str to u64"))
-        .fold(
+fn part1_error_scanning_rate_fold(input: &[u64]) -> u64 {
+    let (increases, _) =
+        input.iter().fold(
             (0, None),
             |(increases, previous_number), new| match previous_number {
                 Some(previous_number) if new > previous_number => (increases + 1, Some(new)),
@@ -55,23 +32,15 @@ fn part1_error_scanning_rate_fold(input: &str) -> u64 {
 }
 
 #[aoc(day1, part1, windows)]
-fn part1_error_scanning_rate_windows(input: &str) -> usize {
+fn part1_error_scanning_rate_windows(input: &[u64]) -> usize {
     input
-        .lines()
-        .map(|s| s.parse::<u64>().expect("Unable to parse str to u64"))
-        .collect::<Vec<_>>()
         .windows(2)
         .filter(|window| window[1] > window[0])
         .count()
 }
 
 #[aoc(day1, part2)]
-fn part2_sliding_windows(input: &str) -> u64 {
-    let input = input
-        .lines()
-        .map(|s| s.parse::<u64>().expect("Unable to parse str to u64"))
-        .collect::<Vec<_>>();
-
+fn part2_sliding_windows(input: &[u64]) -> u64 {
     let mut last_number = None;
     let mut increases = 0;
     for i in 0..input.len() - 2 {
@@ -93,50 +62,28 @@ mod tests {
     #[test]
     fn verify_part1() {
         let input = include_str!("../input/2021/day1.txt");
-        assert_eq!(part1_error_scanning_rate(input), 1688);
-        assert_eq!(part1_error_scanning_rate_match(input), 1688);
-        assert_eq!(part1_error_scanning_rate_fold(input), 1688);
-        assert_eq!(part1_error_scanning_rate_windows(input), 1688);
+        let input = parse_input(input);
+        assert_eq!(part1_error_scanning_rate(input.as_slice()), 1688);
+        assert_eq!(part1_error_scanning_rate_fold(input.as_slice()), 1688);
+        assert_eq!(part1_error_scanning_rate_windows(input.as_slice()), 1688);
     }
 
     #[test]
     fn verify_part2() {
         let input = include_str!("../input/2021/day1.txt");
-        assert_eq!(part2_sliding_windows(input), 1728);
+        assert_eq!(part2_sliding_windows(parse_input(input).as_slice()), 1728);
     }
 
     #[test]
     fn part1_provided_example() {
-        let result = part1_error_scanning_rate(
-            r#"199
-200
-208
-210
-200
-207
-240
-269
-260
-263"#,
-        );
+        let result = part1_error_scanning_rate(&[199, 200, 208, 210, 200, 207, 240, 269, 260, 263]);
 
         assert_eq!(7, result);
     }
 
     #[test]
     fn part2_provided_example() {
-        let result = part2_sliding_windows(
-            r#"199
-200
-208
-210
-200
-207
-240
-269
-260
-263"#,
-        );
+        let result = part2_sliding_windows(&[199, 200, 208, 210, 200, 207, 240, 269, 260, 263]);
 
         assert_eq!(result, 5);
     }
