@@ -55,6 +55,11 @@ fn part2_sliding_windows(input: &[u64]) -> u64 {
     increases
 }
 
+#[aoc(day1, part2, trick)]
+fn part_2_trick(input: &[u64]) -> u64 {
+    input.windows(4).filter(|v| v[3] > v[0]).count() as u64
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -72,6 +77,7 @@ mod tests {
     fn verify_part2() {
         let input = include_str!("../input/2021/day1.txt");
         assert_eq!(part2_sliding_windows(parse_input(input).as_slice()), 1728);
+        assert_eq!(part_2_trick(parse_input(input).as_slice()), 1728);
     }
 
     #[test]
