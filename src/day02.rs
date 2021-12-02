@@ -1,28 +1,18 @@
 use std::str::FromStr;
 
+use strum::EnumString;
+
 #[aoc_generator(day2)]
 fn parse_input(input: &str) -> Vec<Command> {
     input.lines().map(|line| line.parse().unwrap()).collect()
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, EnumString, Debug)]
+#[strum(ascii_case_insensitive)]
 enum Direction {
     Forward,
     Up,
     Down,
-}
-
-impl FromStr for Direction {
-    type Err = String;
-
-    fn from_str(word: &str) -> Result<Self, Self::Err> {
-        match word {
-            "forward" => Ok(Self::Forward),
-            "up" => Ok(Self::Up),
-            "down" => Ok(Self::Down),
-            word => Err(format!("Unable to parse word {:?}", word)),
-        }
-    }
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -38,7 +28,9 @@ impl FromStr for Command {
     fn from_str(line: &str) -> Result<Self, Self::Err> {
         let mut tokens = line.split_ascii_whitespace();
         let direction = tokens.next().ok_or("Couldn't extract direction")?;
-        let direction: Direction = direction.parse()?;
+        let direction: Direction = direction
+            .parse()
+            .map_err(|e| format!("Unable to parse direction: {:?}", e))?;
         let length = tokens
             .next()
             .ok_or("Couldn't extract direction")?
