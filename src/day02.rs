@@ -37,13 +37,13 @@ impl FromStr for Command {
     // todo don't panic
     fn from_str(line: &str) -> Result<Self, Self::Err> {
         let mut tokens = line.split_ascii_whitespace();
-        let direction = tokens.next().expect("couldn't extract direction");
-        let direction: Direction = direction.parse().expect("couldn't parse direction");
+        let direction = tokens.next().ok_or("Couldn't extract direction")?;
+        let direction: Direction = direction.parse()?;
         let length = tokens
             .next()
-            .expect("couldn't extract length")
+            .ok_or("Couldn't extract direction")?
             .parse()
-            .expect("Unable to parse str to int");
+            .map_err(|e| format!("Unable to parse int: {:?}", e))?;
         Ok(Self { direction, length })
     }
 }
@@ -133,27 +133,27 @@ forward 2"#;
             vec![
                 Command {
                     direction: Direction::Forward,
-                    length: 5
+                    length: 5,
                 },
                 Command {
                     direction: Direction::Down,
-                    length: 5
+                    length: 5,
                 },
                 Command {
                     direction: Direction::Forward,
-                    length: 8
+                    length: 8,
                 },
                 Command {
                     direction: Direction::Up,
-                    length: 3
+                    length: 3,
                 },
                 Command {
                     direction: Direction::Down,
-                    length: 8
+                    length: 8,
                 },
                 Command {
                     direction: Direction::Forward,
-                    length: 2
+                    length: 2,
                 },
             ]
         );
@@ -187,12 +187,37 @@ forward 2"#;
                 length: 2,
             },
         ]);
+        assert_eq!(result, 150);
     }
 
-    // #[test]
-    // fn part2_provided_example() {
-    //     let result = part2_sliding_windows(&[199, 200, 208, 210, 200, 207, 240, 269, 260, 263]);
-    //
-    //     assert_eq!(result, 5);
-    // }
+    #[test]
+    fn part2_provided_example() {
+        let result = part2(&[
+            Command {
+                direction: Direction::Forward,
+                length: 5,
+            },
+            Command {
+                direction: Direction::Down,
+                length: 5,
+            },
+            Command {
+                direction: Direction::Forward,
+                length: 8,
+            },
+            Command {
+                direction: Direction::Up,
+                length: 3,
+            },
+            Command {
+                direction: Direction::Down,
+                length: 8,
+            },
+            Command {
+                direction: Direction::Forward,
+                length: 2,
+            },
+        ]);
+        assert_eq!(result, 900);
+    }
 }
