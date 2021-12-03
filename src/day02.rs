@@ -24,7 +24,6 @@ struct Command {
 impl FromStr for Command {
     type Err = String;
 
-    // todo don't panic
     fn from_str(line: &str) -> Result<Self, Self::Err> {
         let mut tokens = line.split_ascii_whitespace();
         let direction = tokens.next().ok_or("Couldn't extract direction")?;
@@ -44,7 +43,6 @@ impl FromStr for Command {
 fn part1(commands: &[Command]) -> u64 {
     let mut horizontal_position = 0;
     let mut depth: u64 = 0;
-
     for command in commands {
         match command {
             Command {
