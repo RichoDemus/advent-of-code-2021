@@ -1,36 +1,41 @@
 use std::collections::VecDeque;
 use std::ops::Not;
-use split_iter::Splittable;
 
 #[aoc_generator(day4)]
 fn parse_input(input: &str) -> Bingo {
     let mut lines = input.lines();
-    let numbers = lines.next().unwrap().split(",").map(|s|s.parse().expect("parse int")).collect::<Vec<_>>();
+    let numbers = lines
+        .next()
+        .unwrap()
+        .split(',')
+        .map(|s| s.parse().expect("parse int"))
+        .collect::<Vec<_>>();
 
     let mut boards = vec![];
     let mut buffer = vec![];
-    while let Some(line) = lines.next() {
+    for line in lines {
         if line.is_empty() {
-            continue
+            continue;
         }
         println!("parsing {}", line);
-        let numbers = line.split_ascii_whitespace()
-            .map(|s|s.parse().expect("parse int2"))
-            .map(|number|Cell{number, marked: false})
+        let numbers = line
+            .split_ascii_whitespace()
+            .map(|s| s.parse().expect("parse int2"))
+            .map(|number| Cell {
+                number,
+                marked: false,
+            })
             .collect::<Vec<_>>();
         buffer.push(numbers);
         if buffer.len() == 5 {
-            let numbers = std::mem::replace(&mut buffer, vec![]);
+            let numbers = std::mem::take(&mut buffer);
             boards.push(Board {
                 cells: numbers,
-                done:false,
-            })
+                done: false,
+            });
         }
     }
-    Bingo {
-        numbers,
-        boards
-    }
+    Bingo { numbers, boards }
 }
 
 #[derive(Debug, Clone)]
@@ -38,14 +43,16 @@ struct Bingo {
     numbers: Vec<u64>,
     boards: Vec<Board>,
 }
+
 #[derive(Debug, Clone)]
 struct Board {
     cells: Vec<Vec<Cell>>,
     done: bool,
 }
+
 impl Board {
     fn mark(&mut self, number: u64) {
-        for mut row in &mut self.cells {
+        for row in &mut self.cells {
             for mut cell in row {
                 if cell.number == number {
                     cell.marked = true;
@@ -56,20 +63,26 @@ impl Board {
     fn bingo(&self) -> bool {
         // check rows
         for row in &self.cells {
-            if row.iter().all(|cell|cell.marked) {
-                return true
+            if row.iter().all(|cell| cell.marked) {
+                return true;
             }
         }
         // check columns
         for column in 0..5 {
-            if self.cells[0][column].marked && self.cells[1][column].marked && self.cells[2][column].marked && self.cells[3][column].marked && self.cells[4][column].marked {
-                return true
+            if self.cells[0][column].marked
+                && self.cells[1][column].marked
+                && self.cells[2][column].marked
+                && self.cells[3][column].marked
+                && self.cells[4][column].marked
+            {
+                return true;
             }
         }
 
         false
     }
 }
+
 #[derive(Debug, Clone)]
 struct Cell {
     number: u64,
@@ -92,9 +105,12 @@ fn part2(input: &Bingo) -> u64 {
                     board.done = true;
                 }
                 if boards_left == 0 {
-                    let unmarked_sum:u64 = board.cells.iter().flat_map(|row|row.iter())
-                        .filter(|cell|cell.marked == false)
-                        .map(|cell|cell.number)
+                    let unmarked_sum: u64 = board
+                        .cells
+                        .iter()
+                        .flat_map(|row| row.iter())
+                        .filter(|cell| cell.marked.not())
+                        .map(|cell| cell.number)
                         .sum();
                     return unmarked_sum * number;
                 }
@@ -112,12 +128,15 @@ fn part1(input: &Bingo) -> u64 {
     let mut boards = input.boards.clone();
 
     while let Some(number) = numbers.pop_front() {
-        for mut board in &mut boards {
+        for board in &mut boards {
             board.mark(number);
             if board.bingo() {
-                let unmarked_sum:u64 = board.cells.iter().flat_map(|row|row.iter())
-                    .filter(|cell|cell.marked == false)
-                    .map(|cell|cell.number)
+                let unmarked_sum: u64 = board
+                    .cells
+                    .iter()
+                    .flat_map(|row| row.iter())
+                    .filter(|cell| cell.marked.not())
+                    .map(|cell| cell.number)
                     .sum();
                 return unmarked_sum * number;
             }
