@@ -69,11 +69,9 @@ fn part1_bit(input: &[Vec<u8>]) -> u64 {
         gamma_rate <<= 1;
         epsilon_rate <<= 1;
         if zeroes > ones {
-            gamma_rate |= 0; // set rightmost bit to 0
             epsilon_rate |= 1; // set rightmost bit to 1
         } else {
             gamma_rate |= 1;
-            epsilon_rate |= 0;
         }
     }
     gamma_rate * epsilon_rate

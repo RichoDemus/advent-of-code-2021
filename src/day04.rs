@@ -17,7 +17,6 @@ fn parse_input(input: &str) -> Bingo {
         if line.is_empty() {
             continue;
         }
-        println!("parsing {}", line);
         let numbers = line
             .split_ascii_whitespace()
             .map(|s| s.parse().expect("parse int2"))
@@ -89,6 +88,31 @@ struct Cell {
     marked: bool,
 }
 
+#[aoc(day4, part1)]
+fn part1(input: &Bingo) -> u64 {
+    let numbers = input.numbers.clone();
+    let mut numbers = VecDeque::from(numbers);
+    let mut boards = input.boards.clone();
+
+    while let Some(number) = numbers.pop_front() {
+        for board in &mut boards {
+            board.mark(number);
+            if board.bingo() {
+                let unmarked_sum: u64 = board
+                    .cells
+                    .iter()
+                    .flat_map(|row| row.iter())
+                    .filter(|cell| cell.marked.not())
+                    .map(|cell| cell.number)
+                    .sum();
+                return unmarked_sum * number;
+            }
+        }
+    }
+
+    panic!("Unreachable code")
+}
+
 #[aoc(day4, part2)]
 fn part2(input: &Bingo) -> u64 {
     let numbers = input.numbers.clone();
@@ -114,31 +138,6 @@ fn part2(input: &Bingo) -> u64 {
                         .sum();
                     return unmarked_sum * number;
                 }
-            }
-        }
-    }
-
-    panic!("Unreachable code")
-}
-
-#[aoc(day4, part1)]
-fn part1(input: &Bingo) -> u64 {
-    let numbers = input.numbers.clone();
-    let mut numbers = VecDeque::from(numbers);
-    let mut boards = input.boards.clone();
-
-    while let Some(number) = numbers.pop_front() {
-        for board in &mut boards {
-            board.mark(number);
-            if board.bingo() {
-                let unmarked_sum: u64 = board
-                    .cells
-                    .iter()
-                    .flat_map(|row| row.iter())
-                    .filter(|cell| cell.marked.not())
-                    .map(|cell| cell.number)
-                    .sum();
-                return unmarked_sum * number;
             }
         }
     }
