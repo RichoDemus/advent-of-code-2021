@@ -1,17 +1,20 @@
 use std::collections::HashMap;
 use std::ops::Not;
+
+use once_cell::unsync::Lazy;
 use regex::Regex;
 
 #[aoc_generator(day5)]
 fn parse_input(input: &str) -> Vec<Line> {
-    let re = Regex::new(r"(\d*),(\d*)\s*->\s(\d*),(\d*)").unwrap();
-    re.captures_iter(input)
-        .map(|groups|Line {
+    let regex = Lazy::new(|| Regex::new(r"(\d*),(\d*)\s*->\s(\d*),(\d*)").unwrap());
+    regex.captures_iter(input)
+        .map(|groups| Line {
             x1: groups[1].parse().unwrap(),
             y1: groups[2].parse().unwrap(),
             x2: groups[3].parse().unwrap(),
             y2: groups[4].parse().unwrap(),
-        }).collect()
+        })
+        .collect()
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -25,31 +28,32 @@ struct Line {
 impl Line {
     fn points(&self) -> Vec<(i64, i64)> {
         let mut result = vec![];
-        if self.is_straight() {
-            for x in self.x1.min(self.x2)..=self.x1.max(self.x2) {
-                for y in self.y1.min(self.y2)..=self.y1.max(self.y2) {
-                    result.push((x, y))
-                }
-            }
+        let x_direction_modifier = if self.x1 < self.x2 {
+            1
+        } else if self.x1 == self.x2 {
+            0
         } else {
-            let x_direction_modifier = if self.x1 < self.x2 {
-                1
-            } else {
-                -1
-            };
-            let y_direction_modifier = if self.y1 < self.y2 {
-                1
-            } else {
-                -1
-            };
+            -1
+        };
 
-            //start is x1, y1. end is x2 y2
-            let steps = self.x1.max(self.x2) - self.x1.min(self.x2);
-            for step in 0..=steps {
-                let new_point = (self.x1 + step * x_direction_modifier, self.y1 + step * y_direction_modifier);
-                result.push(new_point);
+        let y_direction_modifier = if self.y1 < self.y2 {
+            1
+        } else if self.y1 == self.y2 {
+            0
+        } else {
+            -1
+        };
 
-            }
+        //start is x1, y1. end is x2 y2
+        let x_steps = self.x1.max(self.x2) - self.x1.min(self.x2);
+        let y_steps = self.y1.max(self.y2) - self.y1.min(self.y2);
+        let steps = x_steps.max(y_steps);
+        for step in 0..=steps {
+            let new_point = (
+                self.x1 + step * x_direction_modifier,
+                self.y1 + step * y_direction_modifier,
+            );
+            result.push(new_point);
         }
         result
     }
@@ -67,16 +71,14 @@ fn part1(input: &[Line]) -> usize {
     let mut floor = HashMap::new();
     for line in input {
         if line.is_straight().not() {
-            continue
+            continue;
         }
         for point in line.points() {
             *floor.entry(point).or_insert(0) += 1;
         }
     }
 
-    floor.values()
-        .filter(|value|value > &&1)
-        .count()
+    floor.values().filter(|value| value > &&1).count()
 }
 
 #[aoc(day5, part2)]
@@ -88,21 +90,17 @@ fn part2(input: &[Line]) -> usize {
         }
     }
 
-    floor.values()
-        .filter(|value|value > &&1)
-        .count()
+    floor.values().filter(|value| value > &&1).count()
 }
-
 
 #[allow(dead_code)]
 fn print(seats: &HashMap<(i64, i64), i32>) {
-    let x_min = *seats.keys().map(|(x,_)|x).min().unwrap();
-    let x_max = *seats.keys().map(|(x,_)|x).max().unwrap();
-    let y_min = *seats.keys().map(|(_,y)|y).min().unwrap();
-    let y_max = *seats.keys().map(|(_,y)|y).max().unwrap();
+    let x_min = *seats.keys().map(|(x, _)| x).min().unwrap();
+    let x_max = *seats.keys().map(|(x, _)| x).max().unwrap();
+    let y_min = *seats.keys().map(|(_, y)| y).min().unwrap();
+    let y_max = *seats.keys().map(|(_, y)| y).max().unwrap();
     for y in y_min..=y_max {
         for x in x_min..=x_max {
-
             match seats.get(&(x, y)) {
                 None => print!("."),
                 Some(amount) => print!("{}", amount),
