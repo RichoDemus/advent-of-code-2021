@@ -160,4 +160,11 @@ mod tests {
 
         assert_eq!(result, 12)
     }
+
+    #[test]
+    fn special_part3() {
+        let input = include_str!("../input/2021/day5_part3.txt");
+        let input = parse_input(input);
+        assert_eq!(part1(input.as_slice()), 1967556606);
+    }
 }
