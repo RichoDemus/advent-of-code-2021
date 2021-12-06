@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::ops::Not;
 
@@ -7,7 +8,8 @@ use regex::Regex;
 #[aoc_generator(day5)]
 fn parse_input(input: &str) -> Vec<Line> {
     let regex = Lazy::new(|| Regex::new(r"(\d*),(\d*)\s*->\s(\d*),(\d*)").unwrap());
-    regex.captures_iter(input)
+    regex
+        .captures_iter(input)
         .map(|groups| Line {
             x1: groups[1].parse().unwrap(),
             y1: groups[2].parse().unwrap(),
@@ -28,20 +30,16 @@ struct Line {
 impl Line {
     fn points(&self) -> Vec<(i64, i64)> {
         let mut result = vec![];
-        let x_direction_modifier = if self.x1 < self.x2 {
-            1
-        } else if self.x1 == self.x2 {
-            0
-        } else {
-            -1
+        let x_direction_modifier = match self.x1.cmp(&self.x2) {
+            Ordering::Less => 1,
+            Ordering::Equal => 0,
+            Ordering::Greater => -1,
         };
 
-        let y_direction_modifier = if self.y1 < self.y2 {
-            1
-        } else if self.y1 == self.y2 {
-            0
-        } else {
-            -1
+        let y_direction_modifier = match self.y1.cmp(&self.y2) {
+            Ordering::Less => 1,
+            Ordering::Equal => 0,
+            Ordering::Greater => -1,
         };
 
         //start is x1, y1. end is x2 y2
@@ -106,7 +104,7 @@ fn print(seats: &HashMap<(i64, i64), i32>) {
                 Some(amount) => print!("{}", amount),
             }
         }
-        println!()
+        println!();
     }
 }
 

@@ -98,6 +98,7 @@ fn part2(input: &[Vec<u8>]) -> u64 {
 }
 
 type ReportDeciderFn = fn(Vec<Vec<u8>>, Vec<Vec<u8>>) -> Vec<Vec<u8>>;
+
 fn calculate_rating(report: &[Vec<u8>], report_decider: ReportDeciderFn) -> u64 {
     let mut report: Vec<Vec<u8>> = report.to_vec();
     for column in 0..12 {
