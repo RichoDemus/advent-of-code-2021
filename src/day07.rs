@@ -43,11 +43,30 @@ fn part2(input: &[i64]) -> i64 {
         }
         let new_lowest_fuel_cost = match lowest_fuel_cost {
             Some(current_fuel_cost) => current_fuel_cost.min(fuel_cost),
-            _ => fuel_cost,
+            None => fuel_cost,
         };
         lowest_fuel_cost = Some(new_lowest_fuel_cost);
     }
     lowest_fuel_cost.expect("Should be a number here")
+}
+
+#[aoc(day7, part2, fp)]
+fn part2_fp(crabmarines: &[i64]) -> i64 {
+    let min = *crabmarines.iter().min().unwrap();
+    let max = *crabmarines.iter().max().unwrap();
+
+    (min..=max)
+        .into_iter()
+        .map(|position| {
+            crabmarines
+                .iter()
+                .map(|crabmarine_position| crabmarine_position - position)
+                .map(|steps| steps.abs())
+                .map(|steps| (steps * (1 + steps)) / 2)
+                .sum()
+        })
+        .min()
+        .expect("Should be a number here")
 }
 
 #[cfg(test)]
@@ -65,6 +84,7 @@ mod tests {
     fn verify_part2() {
         let input = include_str!("../input/2021/day7.txt");
         assert_eq!(part2(parse_input(input).as_slice()), 91257582);
+        assert_eq!(part2_fp(parse_input(input).as_slice()), 91257582);
     }
 
     #[test]
