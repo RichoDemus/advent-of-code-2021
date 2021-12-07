@@ -1,4 +1,4 @@
-#[aoc_generator(day5)]
+#[aoc_generator(dayX)]
 fn parse_input(input: &str) -> Vec<u8> {
     todo!()
 }
