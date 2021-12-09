@@ -367,18 +367,18 @@ fn part1(lines: &[Line]) -> usize {
 mod tests {
     use super::*;
 
-// #[test]
-//     fn verify_part1() {
-//         let input = include_str!("../input/2021/day8.txt");
-//         let input = parse_input(input);
-//         assert_eq!(part1(input.as_slice()), 6666);
-//     }
+#[test]
+    fn verify_part1() {
+        let input = include_str!("../input/2021/day8.txt");
+        let input = parse_input(input);
+        assert_eq!(part1(input.as_slice()), 301);
+    }
 
-    // #[test]
-    // fn verify_part2() {
-    //     let input = include_str!("../input/2021/day8.txt");
-    //     assert_eq!(part2(parse_input(input).as_slice()), 19081);
-    // }
+    #[test]
+    fn verify_part2() {
+        let input = include_str!("../input/2021/day8.txt");
+        assert_eq!(part2(parse_input(input).as_slice()), 908067);
+    }
 
     #[test]
     fn part1_provided_example() {

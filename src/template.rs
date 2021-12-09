@@ -20,14 +20,14 @@ mod tests {
 
 // #[test]
     // fn verify_part1() {
-    //     let input = include_str!("../input/2021/day5.txt");
+    //     let input = include_str!("../input/2021/dayX.txt");
     //     let input = parse_input(input);
     //     assert_eq!(part1(input.as_slice()), 6666);
     // }
 
     // #[test]
     // fn verify_part2() {
-    //     let input = include_str!("../input/2021/day5.txt");
+    //     let input = include_str!("../input/2021/dayX.txt");
     //     assert_eq!(part2(parse_input(input).as_slice()), 19081);
     // }
 
