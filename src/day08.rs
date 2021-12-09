@@ -1,28 +1,40 @@
 use std::collections::HashMap;
 use std::ops::Not;
-use std::str::Chars;
 
 use itertools::Itertools;
 use split_iter::Splittable;
 
 #[aoc_generator(day8)]
 fn parse_input(input: &str) -> Vec<Line> {
-    input.lines()
+    input
+        .lines()
         .filter_map(|line| {
             if line.is_empty() {
-                return None
+                return None;
             }
             let mut split = line.split('|');
-            let signals = split.next().unwrap_or_else(||panic!("can't parse: {:?}", line)).trim();
-            let output = split.next().unwrap_or_else(||panic!("can't parse: {:?}", line)).trim();
+            let signals = split
+                .next()
+                .unwrap_or_else(|| panic!("can't parse: {:?}", line))
+                .trim();
+            let output = split
+                .next()
+                .unwrap_or_else(|| panic!("can't parse: {:?}", line))
+                .trim();
 
-            let signals = signals.split_whitespace().map(|s|s.to_string()).map(|segments|Segments {segments}).collect::<Vec<_>>();
-            let output = output.split_whitespace().map(|s|s.to_string()).map(|segments|Segments {segments}).collect::<Vec<_>>();
-            Some(Line {
-                signals,
-                output
-            })
-        }).collect()
+            let signals = signals
+                .split_whitespace()
+                .map(std::string::ToString::to_string)
+                .map(|segments| Segments { segments })
+                .collect::<Vec<_>>();
+            let output = output
+                .split_whitespace()
+                .map(std::string::ToString::to_string)
+                .map(|segments| Segments { segments })
+                .collect::<Vec<_>>();
+            Some(Line { signals, output })
+        })
+        .collect()
 }
 
 #[derive(Debug, Clone)]
@@ -38,7 +50,7 @@ struct Segments {
 
 impl Segments {
     fn possible_digits(&self) -> Vec<i64> {
-        let possible_digits:Vec<i64>  = match self.segments.len() {
+        let possible_digits: Vec<i64> = match self.segments.len() {
             2 => vec![1],
             3 => vec![7],
             4 => vec![4],
@@ -74,12 +86,10 @@ struct Mappings {
 impl Default for Mappings {
     fn default() -> Self {
         let mut mappings = HashMap::new();
-        for segment in ['a','b','c','d','e','f','g'] {
-            mappings.insert(segment, vec!['a','b','c','d','e','f','g']);
+        for segment in ['a', 'b', 'c', 'd', 'e', 'f', 'g'] {
+            mappings.insert(segment, vec!['a', 'b', 'c', 'd', 'e', 'f', 'g']);
         }
-        Self {
-            mappings
-        }
+        Self { mappings }
     }
 }
 
@@ -101,18 +111,19 @@ impl Default for Mappings {
 //     }
 // }
 
+#[allow(dead_code)]
 fn digit_to_segments2(digit: i64) -> Vec<char> {
     match digit {
-        0 => vec!['a','b','c','e','f','g'],
-        1 => vec!['c','f'],
-        2 => vec!['a','c','d','e','g'],
-        3 => vec!['a','c','d','f','g'],
-        4 => vec!['b','c','d','f'],
-        5 => vec!['a','b','d','f','g'],
-        6 => vec!['a','b','d','e','f','g'],
-        7 => vec!['a','c','f'],
-        8 => vec!['a','b','c','d','e','f','g'],
-        9 => vec!['a','b','c','d','f','g'],
+        0 => vec!['a', 'b', 'c', 'e', 'f', 'g'],
+        1 => vec!['c', 'f'],
+        2 => vec!['a', 'c', 'd', 'e', 'g'],
+        3 => vec!['a', 'c', 'd', 'f', 'g'],
+        4 => vec!['b', 'c', 'd', 'f'],
+        5 => vec!['a', 'b', 'd', 'f', 'g'],
+        6 => vec!['a', 'b', 'd', 'e', 'f', 'g'],
+        7 => vec!['a', 'c', 'f'],
+        8 => vec!['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+        9 => vec!['a', 'b', 'c', 'd', 'f', 'g'],
         _ => panic!("Bad digit: {}", digit),
     }
 }
@@ -155,20 +166,24 @@ fn digit_to_segments2(digit: i64) -> Vec<char> {
 //     }
 //     todo!()
 // }
-
+#[allow(dead_code)]
 fn is_in(outer: &str, inner: &str) -> bool {
-    let result = inner.chars().into_iter().all(|segment| outer.chars().contains(&segment));
+    let result = inner
+        .chars()
+        .into_iter()
+        .all(|segment| outer.chars().contains(&segment));
     // println!("\tIs {:?} in {:?}? {}", inner, outer, result);
     result
 }
 
 #[aoc(day8, part2)]
+#[allow(clippy::too_many_lines)]
 fn part2(input: &[Line]) -> usize {
     let mut total_sum = 0;
     for line in input {
         let mut known = HashMap::new();
         let mut segments = line.signals.clone();
-        segments.retain(|segment|{
+        segments.retain(|segment| {
             let digits = segment.possible_digits();
             if digits.len() == 1 {
                 let digit = digits[0];
@@ -179,13 +194,12 @@ fn part2(input: &[Line]) -> usize {
         });
         println!("took the easy ones: {:?}, left are {:?}", known, segments);
 
-        let (could_be_235, could_be_069) = segments.into_iter().split(|s|s.segments.len() == 6);
+        let (could_be_235, could_be_069) = segments.into_iter().split(|s| s.segments.len() == 6);
         let could_be_235 = could_be_235.collect::<Vec<_>>();
         let could_be_069 = could_be_069.collect::<Vec<_>>();
 
         println!("235: {:?}", could_be_235);
         println!("069: {:?}", could_be_069);
-
 
         let one = known.get(&1).unwrap().clone();
         let four = known.get(&4).unwrap().clone();
@@ -201,33 +215,46 @@ fn part2(input: &[Line]) -> usize {
         // lets make the magical 4-1 thing
         let four_minues_one = {
             let mut fours = four.chars().collect::<Vec<char>>();
-            let ones =  one.chars().collect::<Vec<char>>();
+            let ones = one.chars().collect::<Vec<char>>();
             fours.retain(|c| ones.contains(c).not());
             fours
         };
 
         //find 3
-        let (two_and_five,three) = could_be_235.into_iter().split(|s|one.chars().all(|one_char|s.segments.chars().contains(&one_char)));
+        let (two_and_five, three) = could_be_235.into_iter().split(|s| {
+            one.chars()
+                .all(|one_char| s.segments.chars().contains(&one_char))
+        });
         let three = three.collect::<Vec<_>>();
         let two_and_five = two_and_five.collect::<Vec<_>>();
 
         println!("2&5: {:?}", two_and_five);
 
         // find 5
-        let (two,five) = two_and_five.into_iter().split(|s|four_minues_one.iter().all(|char|s.segments.chars().contains(&char)));
+        let (two, five) = two_and_five.into_iter().split(|s| {
+            four_minues_one
+                .iter()
+                .all(|char| s.segments.chars().contains(char))
+        });
         let five = five.collect::<Vec<_>>();
         let two = two.collect::<Vec<_>>();
 
-
         //find 6
-        let (six,zero_and_nine) = could_be_069.into_iter().split(|s|one.chars().all(|one_char|s.segments.chars().contains(&one_char)));
+        let (six, zero_and_nine) = could_be_069.into_iter().split(|s| {
+            one.chars()
+                .all(|one_char| s.segments.chars().contains(&one_char))
+        });
         let six = six.collect::<Vec<_>>();
         let zero_and_nine = zero_and_nine.collect::<Vec<_>>();
 
         println!("0&9: {:?}", zero_and_nine);
 
         // find 9
-        let (zero,nine) = zero_and_nine.into_iter().split(|s|four_minues_one.iter().all(|char|s.segments.chars().contains(&char)));
+        let (zero, nine) = zero_and_nine.into_iter().split(|s| {
+            four_minues_one
+                .iter()
+                .all(|char| s.segments.chars().contains(char))
+        });
         let nine = nine.collect::<Vec<_>>();
         let zero = zero.collect::<Vec<_>>();
         let zero = zero[0].segments.clone();
@@ -250,22 +277,32 @@ fn part2(input: &[Line]) -> usize {
         println!("9: {:?}", nine);
 
         let mut damn_digits = HashMap::new();
-        damn_digits.insert( zero.chars().sorted().collect::<Vec<_>>(),0);
-        damn_digits.insert( one.chars().sorted().collect::<Vec<_>>(),1);
-        damn_digits.insert( two.chars().sorted().collect::<Vec<_>>(),2);
-        damn_digits.insert( three.chars().sorted().collect::<Vec<_>>(),3);
-        damn_digits.insert( four.chars().sorted().collect::<Vec<_>>(),4);
-        damn_digits.insert( five.chars().sorted().collect::<Vec<_>>(),5);
-        damn_digits.insert( six.chars().sorted().collect::<Vec<_>>(),6);
-        damn_digits.insert( seven.chars().sorted().collect::<Vec<_>>(),7);
-        damn_digits.insert( eight.chars().sorted().collect::<Vec<_>>(),8);
-        damn_digits.insert( nine.chars().sorted().collect::<Vec<_>>(),9);
+        damn_digits.insert(zero.chars().sorted().collect::<Vec<_>>(), 0);
+        damn_digits.insert(one.chars().sorted().collect::<Vec<_>>(), 1);
+        damn_digits.insert(two.chars().sorted().collect::<Vec<_>>(), 2);
+        damn_digits.insert(three.chars().sorted().collect::<Vec<_>>(), 3);
+        damn_digits.insert(four.chars().sorted().collect::<Vec<_>>(), 4);
+        damn_digits.insert(five.chars().sorted().collect::<Vec<_>>(), 5);
+        damn_digits.insert(six.chars().sorted().collect::<Vec<_>>(), 6);
+        damn_digits.insert(seven.chars().sorted().collect::<Vec<_>>(), 7);
+        damn_digits.insert(eight.chars().sorted().collect::<Vec<_>>(), 8);
+        damn_digits.insert(nine.chars().sorted().collect::<Vec<_>>(), 9);
 
-        let numbers = line.output.iter().map(|output_segments|output_segments.segments.chars().sorted().collect::<Vec<_>>())
-            .map(|output_sequence|{
+        let numbers = line
+            .output
+            .iter()
+            .map(|output_segments| {
+                output_segments
+                    .segments
+                    .chars()
+                    .sorted()
+                    .collect::<Vec<_>>()
+            })
+            .map(|output_sequence| {
                 let asd = *damn_digits.get(&output_sequence).expect("PLS BE HERE");
                 asd
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
 
         let sum = numbers[0] * 1000 + numbers[1] * 100 + numbers[2] * 10 + numbers[3];
         println!("sum: {}", sum);
@@ -277,12 +314,13 @@ fn part2(input: &[Line]) -> usize {
 }
 
 // #[aoc(day8, part2)]
+#[allow(dead_code, clippy::too_many_lines)]
 fn part2_old(input: &[Line]) -> usize {
     for line in input {
-        let digits = vec![1,2,3,4,5,6,7,8,9,0];
+        let digits = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
         let mut valid_permutations = 0;
         'perm: for permutation in digits.iter().permutations(10) {
-            for (i,segments) in line.signals.iter().enumerate() {
+            for (i, segments) in line.signals.iter().enumerate() {
                 let desired_digit = permutation[i];
                 if segments.possible_digits().contains(desired_digit).not() {
                     continue 'perm;
@@ -292,32 +330,102 @@ fn part2_old(input: &[Line]) -> usize {
             println!("Possible numbers: {:?}", permutation);
             println!("Segments: {:?}", line.signals);
             // lets do some checks
-            let potential_zero = line.signals.get(permutation.iter().position(|digit| **digit == 0).unwrap()).unwrap().segments.as_str();
-            let potential_one = line.signals.get(permutation.iter().position(|digit| **digit == 1).unwrap()).unwrap().segments.as_str();
-            let potential_two = line.signals.get(permutation.iter().position(|digit| **digit == 2).unwrap()).unwrap().segments.as_str();
-            let potential_three = line.signals.get(permutation.iter().position(|digit| **digit == 3).unwrap()).unwrap().segments.as_str();
-            let potential_four = line.signals.get(permutation.iter().position(|digit| **digit == 4).unwrap()).unwrap().segments.as_str();
-            let potential_five = line.signals.get(permutation.iter().position(|digit| **digit == 5).unwrap()).unwrap().segments.as_str();
-            let potential_six = line.signals.get(permutation.iter().position(|digit| **digit == 6).unwrap()).unwrap().segments.as_str();
-            let potential_seven = line.signals.get(permutation.iter().position(|digit| **digit == 7).unwrap()).unwrap().segments.as_str();
-            let potential_eight = line.signals.get(permutation.iter().position(|digit| **digit == 8).unwrap()).unwrap().segments.as_str();
-            let potential_nine = line.signals.get(permutation.iter().position(|digit| **digit == 9).unwrap()).unwrap().segments.as_str();
+            let _potential_zero = line
+                .signals
+                .get(permutation.iter().position(|digit| **digit == 0).unwrap())
+                .unwrap()
+                .segments
+                .as_str();
+            let _potential_one = line
+                .signals
+                .get(permutation.iter().position(|digit| **digit == 1).unwrap())
+                .unwrap()
+                .segments
+                .as_str();
+            let _potential_two = line
+                .signals
+                .get(permutation.iter().position(|digit| **digit == 2).unwrap())
+                .unwrap()
+                .segments
+                .as_str();
+            let _potential_three = line
+                .signals
+                .get(permutation.iter().position(|digit| **digit == 3).unwrap())
+                .unwrap()
+                .segments
+                .as_str();
+            let _potential_four = line
+                .signals
+                .get(permutation.iter().position(|digit| **digit == 4).unwrap())
+                .unwrap()
+                .segments
+                .as_str();
+            let _potential_five = line
+                .signals
+                .get(permutation.iter().position(|digit| **digit == 5).unwrap())
+                .unwrap()
+                .segments
+                .as_str();
+            let _potential_six = line
+                .signals
+                .get(permutation.iter().position(|digit| **digit == 6).unwrap())
+                .unwrap()
+                .segments
+                .as_str();
+            let _potential_seven = line
+                .signals
+                .get(permutation.iter().position(|digit| **digit == 7).unwrap())
+                .unwrap()
+                .segments
+                .as_str();
+            let _potential_eight = line
+                .signals
+                .get(permutation.iter().position(|digit| **digit == 8).unwrap())
+                .unwrap()
+                .segments
+                .as_str();
+            let _potential_nine = line
+                .signals
+                .get(permutation.iter().position(|digit| **digit == 9).unwrap())
+                .unwrap()
+                .segments
+                .as_str();
 
             // format left is in right
             let contain_rules = vec![
-                (1,0),
-                (5,6),
-                (7,0),
-                (7,3),
-                (7,8),
-                (3,9),
-                (4,8),
-                (4,9),
+                (1, 0),
+                (5, 6),
+                (7, 0),
+                (7, 3),
+                (7, 8),
+                (3, 9),
+                (4, 8),
+                (4, 9),
             ];
 
             for (inner, outer) in contain_rules {
-                let inner2 = line.signals.get(permutation.iter().position(|digit| **digit == inner).unwrap()).unwrap().segments.as_str();
-                let outer2 = line.signals.get(permutation.iter().position(|digit| **digit == outer).unwrap()).unwrap().segments.as_str();
+                let inner2 = line
+                    .signals
+                    .get(
+                        permutation
+                            .iter()
+                            .position(|digit| **digit == inner)
+                            .unwrap(),
+                    )
+                    .unwrap()
+                    .segments
+                    .as_str();
+                let outer2 = line
+                    .signals
+                    .get(
+                        permutation
+                            .iter()
+                            .position(|digit| **digit == outer)
+                            .unwrap(),
+                    )
+                    .unwrap()
+                    .segments
+                    .as_str();
                 if is_in(outer2, inner2).not() {
                     println!("\t{} in {} failed", inner, outer);
                     continue 'perm;
@@ -343,7 +451,6 @@ fn part2_old(input: &[Line]) -> usize {
             // panic!("Found one permutation: {:?}", permutation);
             // we have a solution!
             valid_permutations += 1;
-
         }
         if valid_permutations != 1 {
             panic!("Got {} permutations", valid_permutations);
@@ -355,19 +462,22 @@ fn part2_old(input: &[Line]) -> usize {
 
 #[aoc(day8, part1)]
 fn part1(lines: &[Line]) -> usize {
-    lines.iter()
-        .map(|line|{
-            line.output.iter()
-                .filter(|segments|segments.possible_digits().len() == 1)
+    lines
+        .iter()
+        .map(|line| {
+            line.output
+                .iter()
+                .filter(|segments| segments.possible_digits().len() == 1)
                 .count()
-        }).sum()
+        })
+        .sum()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-#[test]
+    #[test]
     fn verify_part1() {
         let input = include_str!("../input/2021/day8.txt");
         let input = parse_input(input);
@@ -418,7 +528,9 @@ gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce
 
     #[test]
     fn part2_mini_example() {
-        let result = part2(&parse_input(r#"acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf"#));
+        let result = part2(&parse_input(
+            r#"acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf"#,
+        ));
 
         assert_eq!(result, 5353)
     }

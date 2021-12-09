@@ -1,71 +1,78 @@
+use itertools::Itertools;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
-use itertools::Itertools;
 
 #[aoc_generator(day9)]
-fn parse_input(input: &str) -> Vec<Vec<u8>> {
-    input.lines()
-        .map(|line|line.chars().map(|char|char.to_digit(10).unwrap() as u8).collect())
+fn parse_input(input: &str) -> Vec<Vec<i64>> {
+    input
+        .lines()
+        .map(|line| {
+            line.chars()
+                .map(|char| char.to_digit(10).unwrap())
+                .map(i64::from)
+                .collect()
+        })
         .collect()
 }
 
-
 #[aoc(day9, part1)]
-fn part1(input: &[Vec<u8>]) -> i64 {
+fn part1(input: &[Vec<i64>]) -> i64 {
     let mut risk_level = 0;
     for (y, row) in input.iter().enumerate() {
         for (x, point) in row.iter().enumerate() {
-            let north_neihbour = y.checked_sub(1)
-                .map(|y|input.get(y))
-                .flatten()
-                .map(|row|row.get(x))
-                .flatten();
-            let south_neihbour = input.get(y+1).map(|row|row.get(x)).flatten();
-            let east_neihbour = input.get(y).map(|row|row.get(x+1)).flatten();
-            let west_neihbour = input.get(y).map(|row|x.checked_sub(1).map(|x|row.get(x))).flatten().flatten();
+            let north_neihbour = y
+                .checked_sub(1)
+                .and_then(|y| input.get(y))
+                .and_then(|row| row.get(x));
+            let south_neihbour = input.get(y + 1).and_then(|row| row.get(x));
+            let east_neihbour = input.get(y).and_then(|row| row.get(x + 1));
+            let west_neihbour = input
+                .get(y)
+                .and_then(|row| x.checked_sub(1).and_then(|x| row.get(x)));
             // println!("{} at ({},{}). neighbours: N/S/E/W: {:?} {:?} {:?} {:?} ", point, x,y, north_neihbour,south_neihbour,east_neihbour,west_neihbour);
-            if let Some(height) = north_neihbour{
+            if let Some(height) = north_neihbour {
                 if point >= height {
-                    continue
+                    continue;
                 }
             }
-            if let Some(height) = south_neihbour{
+            if let Some(height) = south_neihbour {
                 if point >= height {
-                    continue
+                    continue;
                 }
             }
-            if let Some(height) = east_neihbour{
+            if let Some(height) = east_neihbour {
                 if point >= height {
-                    continue
+                    continue;
                 }
             }
-            if let Some(height) = west_neihbour{
+            if let Some(height) = west_neihbour {
                 if point >= height {
-                    continue
+                    continue;
                 }
             }
-            risk_level += *point as i64 + 1;
+            risk_level += *point + 1;
         }
     }
     risk_level
 }
 
 #[aoc(day9, part2)]
-fn part2(input: &[Vec<u8>]) -> usize {
+fn part2(input: &[Vec<i64>]) -> usize {
     // a "lowest number", expand around neighbours while all new numbers are bigger
     let mut map = HashMap::new();
     for (y, row) in input.iter().enumerate() {
         for (x, point) in row.iter().enumerate() {
-            map.insert((x as i64,y as i64), *point);
+            map.insert((x as i64, y as i64), *point);
         }
     }
 
     let mut basin_sizes = vec![];
     let mut coordinates_already_in_another_basin = HashSet::new();
     for start_level in 0..=9 {
-        let coordinates = map.iter()
-            .filter(|(coordinates, level)|**level == start_level)
-            .filter(|(coordinates, level)| **level != 9)
+        let coordinates = map
+            .iter()
+            .filter(|(_coordinates, level)| **level == start_level)
+            .filter(|(_coordinates, level)| **level != 9)
             .map(|(coordinates, _)| *coordinates)
             .collect::<Vec<_>>();
 
@@ -81,41 +88,47 @@ fn part2(input: &[Vec<u8>]) -> usize {
                 // println!("\tLook level is now {}", look_level);
                 let mut new_coordinates_to_add_to_basin = HashSet::new();
                 for (current_x, current_y) in &basin {
-                    for (neighbour_x, neighbour_y, direction) in calc_neighbours(*current_x, *current_y) {
+                    for (neighbour_x, neighbour_y, _direction) in
+                        calc_neighbours(*current_x, *current_y)
+                    {
                         // println!("\tAs {},{} looking to see if {:?} neighbour {:?} is in same basin", current_x, current_y, direction, map.get(&(neighbour_x, neighbour_y)));
-                        if coordinates_already_in_another_basin.contains(&(neighbour_x, neighbour_y)) {
+                        if coordinates_already_in_another_basin
+                            .contains(&(neighbour_x, neighbour_y))
+                        {
                             panic!("We've gotten into another basin! :O")
                         }
                         if basin.contains(&(neighbour_x, neighbour_y)) {
                             // this point is already in this basin
-                            continue
+                            continue;
                         }
                         let neighbour_height = match map.get(&(neighbour_x, neighbour_y)) {
                             None => continue,
                             Some(neighbour_height) => *neighbour_height,
                         };
                         match neighbour_height.cmp(&look_level) {
-                            Ordering::Less => panic!("Found a new basin I think: {},{}, {}", neighbour_x, neighbour_y, neighbour_height),
+                            Ordering::Less => panic!(
+                                "Found a new basin I think: {},{}, {}",
+                                neighbour_x, neighbour_y, neighbour_height
+                            ),
                             Ordering::Equal => {
                                 // same height as what we're looking at
                                 // println!("\t\tAdded {},{} to current basin", neighbour_x, neighbour_y);
                                 new_coordinates_to_add_to_basin.insert((neighbour_x, neighbour_y));
                             }
-                            Ordering::Greater => () // this neighbour is higher up, ignore it, maybe it will be covered at the next look level
+                            Ordering::Greater => (), // this neighbour is higher up, ignore it, maybe it will be covered at the next look level
                         }
                     }
                 }
-                new_coordinates_to_add_to_basin.into_iter().for_each(|coord|{
+                for coord in new_coordinates_to_add_to_basin {
                     basin.insert(coord);
-                });
+                }
             }
-            println!("Found a size {} basin? {:?}", basin.len(), basin);
+            // println!("Found a size {} basin? {:?}", basin.len(), basin);
             basin_sizes.push(basin.len());
-            basin.into_iter().for_each(|coord|{
+            for coord in basin {
                 coordinates_already_in_another_basin.insert(coord);
-            });
+            }
         }
-
     }
 
     basin_sizes.into_iter().sorted().rev().take(3).product()
@@ -123,15 +136,18 @@ fn part2(input: &[Vec<u8>]) -> usize {
 
 #[derive(Debug)]
 enum Direction {
-    N,E,S,W
+    N,
+    E,
+    S,
+    W,
 }
 
-fn calc_neighbours(x: i64, y:i64) -> Vec<(i64, i64, Direction)> {
+fn calc_neighbours(x: i64, y: i64) -> Vec<(i64, i64, Direction)> {
     vec![
-        (x+1,y, Direction::E),
-        (x-1,y, Direction::W),
-        (x,y+1, Direction::N),
-        (x,y-1, Direction::S),
+        (x + 1, y, Direction::E),
+        (x - 1, y, Direction::W),
+        (x, y + 1, Direction::N),
+        (x, y - 1, Direction::S),
     ]
 }
 

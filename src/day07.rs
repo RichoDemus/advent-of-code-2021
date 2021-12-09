@@ -61,7 +61,7 @@ fn part2_fp(crabmarines: &[i64]) -> i64 {
             crabmarines
                 .iter()
                 .map(|crabmarine_position| crabmarine_position - position)
-                .map(|steps| steps.abs())
+                .map(i64::abs)
                 .map(|steps| (steps * (1 + steps)) / 2)
                 .sum()
         })
