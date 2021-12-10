@@ -52,6 +52,38 @@ fn part1(input: &[String]) -> usize {
         .sum()
 }
 
+#[aoc(day10, part1, looperino)]
+fn part1_loop(input: &[String]) -> usize {
+    let closing_chars = vec![')', ']', '}', '>'];
+    input
+        .iter()
+        .map(|l| {
+            let mut line = l.clone();
+            loop {
+                let length = line.len();
+                line = line.replace("()", "");
+                line = line.replace("[]", "");
+                line = line.replace("{}", "");
+                line = line.replace("<>", "");
+                if line.len() == length {
+                    break;
+                }
+            }
+            if let Some(char) = line.chars().find(|c| closing_chars.contains(c)) {
+                match char {
+                    ')' => 3,
+                    ']' => 57,
+                    '}' => 1197,
+                    '>' => 25137,
+                    _ => todo!(),
+                }
+            } else {
+                0
+            }
+        })
+        .sum()
+}
+
 #[aoc(day10, part2)]
 fn part2(input: &[String]) -> usize {
     let opening_chars = vec!['(', '[', '{', '<'];
@@ -113,6 +145,7 @@ mod tests {
         let input = include_str!("../input/2021/day10.txt");
         let input = parse_input(input);
         assert_eq!(part1(input.as_slice()), 311895);
+        assert_eq!(part1_loop(input.as_slice()), 311895);
     }
 
     #[test]
@@ -123,7 +156,7 @@ mod tests {
 
     #[test]
     fn part1_provided_example() {
-        let result = part1(&parse_input(
+        let input = parse_input(
             r#"[({(<(())[]>[[{[]{<()<>>
 [(()[<>])]({[<{<<[]>>(
 {([(<{}[<>[]}>{[]{[(<()>
@@ -134,9 +167,10 @@ mod tests {
 [<(<(<(<{}))><([]([]()
 <{([([[(<>()){}]>(<<{{
 <{([{{}}[<[[[<>{}]]]>[]]"#,
-        ));
+        );
 
-        assert_eq!(result, 26397)
+        assert_eq!(part1(&input), 26397);
+        assert_eq!(part1_loop(&input), 26397);
     }
 
     #[test]
