@@ -1,6 +1,7 @@
-use itertools::Itertools;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
+
+use itertools::Itertools;
 
 #[aoc_generator(day9)]
 fn parse_input(input: &str) -> Vec<Vec<i64>> {
