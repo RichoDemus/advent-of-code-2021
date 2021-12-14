@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::panic::resume_unwind;
 
 #[aoc_generator(day13)]
 fn parse_input(input: &str) -> Input {
@@ -7,27 +6,29 @@ fn parse_input(input: &str) -> Input {
     let coordinates = split.next().unwrap();
     let foldings = split.next().unwrap();
 
-    let coordinates = coordinates.lines()
-        .map(|line|{
+    let coordinates = coordinates
+        .lines()
+        .map(|line| {
             let mut split = line.split(',');
             let x = split.next().unwrap();
             let y = split.next().unwrap();
             (x.parse().unwrap(), y.parse().unwrap())
-        }).collect();
+        })
+        .collect();
 
-    let folds = foldings.lines()
-        .map(|line|{
+    let folds = foldings
+        .lines()
+        .map(|line| {
             let fold = &line[11..];
             let mut split = fold.split('=');
             let axis = split.next().unwrap();
             let axis = axis.chars().next().unwrap();
-            let line = split.next().unwrap();
-            let line = line.parse().unwrap();
-            (axis, line)
-        }).collect();
-    Input {
-        coordinates, folds
-    }
+            let fold_line = split.next().unwrap();
+            let fold_line = fold_line.parse().unwrap();
+            (axis, fold_line)
+        })
+        .collect();
+    Input { coordinates, folds }
 }
 
 #[derive(Clone, Debug)]
@@ -38,21 +39,34 @@ struct Input {
 
 #[aoc(day13, part1)]
 fn part1(input: &Input) -> usize {
-    let mut coordinates = input.coordinates.clone();
+    let coordinates = input.coordinates.clone();
     // let y_max = *coordinates.iter().map(|(_x,y)|y).max().unwrap();
     // println!("ymax is {}", y_max);
     //
     let (_axis, fold) = *input.folds.get(0).unwrap();
 
-    let result = fold_paper(&HashSet::from_iter(coordinates.into_iter()), fold, FoldDirection::Vertical);
-    return result.len();
+    let result = fold_paper(
+        &coordinates.into_iter().collect::<HashSet<_, _>>(),
+        fold,
+        FoldDirection::Vertical,
+    );
+    result.len()
 }
+
+#[derive(Copy, Clone)]
 enum FoldDirection {
-    Vertical, Horizontal
+    Vertical,
+    Horizontal,
 }
-fn fold_paper(points: &HashSet<(i32, i32)>, fold_at: i32, fold_direction: FoldDirection) -> HashSet<(i32, i32)> {
-    points.iter().map(|(x, y)| {
-        match fold_direction {
+
+fn fold_paper(
+    points: &HashSet<(i32, i32)>,
+    fold_at: i32,
+    fold_direction: FoldDirection,
+) -> HashSet<(i32, i32)> {
+    points
+        .iter()
+        .map(|(x, y)| match fold_direction {
             FoldDirection::Vertical => {
                 if *x > fold_at {
                     (fold_at - (*x - fold_at), *y)
@@ -67,17 +81,17 @@ fn fold_paper(points: &HashSet<(i32, i32)>, fold_at: i32, fold_direction: FoldDi
                     (*x, *y)
                 }
             }
-        }
-    }).collect::<HashSet<(i32, i32)>>()
+        })
+        .collect::<HashSet<(i32, i32)>>()
 }
 
 fn print(coordinates: &HashSet<(i32, i32)>) {
-    let x_max = *coordinates.iter().map(|(x,_y)|x).max().unwrap();
-    let y_max = *coordinates.iter().map(|(_x,y)|y).max().unwrap();
+    let x_max = *coordinates.iter().map(|(x, _y)| x).max().unwrap();
+    let y_max = *coordinates.iter().map(|(_x, y)| y).max().unwrap();
 
     for y in 0..=y_max {
         for x in 0..=x_max {
-            if coordinates.contains(&(x,y)) {
+            if coordinates.contains(&(x, y)) {
                 print!("#");
             } else {
                 print!(".");
@@ -89,36 +103,35 @@ fn print(coordinates: &HashSet<(i32, i32)>) {
 
 #[aoc(day13, part2)]
 fn part2(input: &Input) -> usize {
-    let mut coordinates = input.coordinates.clone();
+    let coordinates = input.coordinates.clone();
     // let y_max = *coordinates.iter().map(|(_x,y)|y).max().unwrap();
     // println!("ymax is {}", y_max);
     //
 
-    let mut result = HashSet::from_iter(coordinates.into_iter());
+    let mut result = coordinates.into_iter().collect::<HashSet<_, _>>();
     for (axis, fold_line) in &input.folds {
         let axis = match axis {
             'y' => FoldDirection::Horizontal,
             'x' => FoldDirection::Vertical,
-            _ => panic!()
+            _ => panic!(),
         };
         result = fold_paper(&result, *fold_line, axis);
     }
     print(&result);
-    return result.len();
+    result.len()
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-#[test]
+    #[test]
     fn verify_part1() {
         let input = include_str!("../input/2021/day13.txt");
         let input = parse_input(input);
-    let result = part1(&input);
-    assert_ne!(result, 863);
-    assert_eq!(result, 724);
+        let result = part1(&input);
+        assert_ne!(result, 863);
+        assert_eq!(result, 724);
     }
 
     #[test]
