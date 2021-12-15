@@ -8,6 +8,16 @@ pub struct Grid<V: FromStr + std::fmt::Display + std::fmt::Debug> {
 }
 
 impl<V: FromStr + std::fmt::Display + std::fmt::Debug> Grid<V> {
+    pub(crate) fn calc_in_bounds_four_way_neighbours(&self, x: i64, y: i64) -> Vec<(i64,i64)> {
+        get_four_neighbours(x,y)
+            .into_iter()
+            .filter(|(x,y)|self.is_within_bounds(*x,*y))
+            .collect()
+
+    }
+}
+
+impl<V: FromStr + std::fmt::Display + std::fmt::Debug> Grid<V> {
     /// constructs grid from a text block like:
     /// VVVV
     /// VVVV
