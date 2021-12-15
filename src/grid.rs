@@ -8,12 +8,12 @@ pub struct Grid<V: FromStr + std::fmt::Display + std::fmt::Debug> {
 }
 
 impl<V: FromStr + std::fmt::Display + std::fmt::Debug> Grid<V> {
-    pub(crate) fn calc_in_bounds_four_way_neighbours(&self, x: i64, y: i64) -> Vec<(i64,i64)> {
-        get_four_neighbours(x,y)
+    #[allow(dead_code)]
+    pub(crate) fn calc_in_bounds_four_way_neighbours(&self, x: i64, y: i64) -> Vec<(i64, i64)> {
+        get_four_neighbours(x, y)
             .into_iter()
-            .filter(|(x,y)|self.is_within_bounds(*x,*y))
+            .filter(|(x, y)| self.is_within_bounds(*x, *y))
             .collect()
-
     }
 }
 
@@ -51,11 +51,13 @@ impl<V: FromStr + std::fmt::Display + std::fmt::Debug> Grid<V> {
         *self.grid.keys().map(|(_x, y)| y).max().unwrap()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn size(&self) -> u64 {
-        (self.x_max()+1) as u64 * (self.y_max()+1) as u64
+        (self.x_max() + 1) as u64 * (self.y_max() + 1) as u64
     }
 
-    pub(crate) fn is_within_bounds(&self, x:i64, y:i64) -> bool {
+    #[allow(dead_code)]
+    pub(crate) fn is_within_bounds(&self, x: i64, y: i64) -> bool {
         let x_min = *self.grid.keys().map(|(x, _y)| x).min().unwrap();
         let x_max = *self.grid.keys().map(|(x, _y)| x).max().unwrap();
         let y_min = *self.grid.keys().map(|(_x, y)| y).min().unwrap();
@@ -112,11 +114,7 @@ pub fn get_eight_neighbours(x: i64, y: i64) -> Vec<(i64, i64)> {
     result
 }
 
+#[allow(dead_code)]
 pub fn get_four_neighbours(x: i64, y: i64) -> Vec<(i64, i64)> {
-    vec![
-        (x+1, y),
-        (x, y+1),
-        (x-1, y),
-        (x, y-1),
-    ]
+    vec![(x + 1, y), (x, y + 1), (x - 1, y), (x, y - 1)]
 }
