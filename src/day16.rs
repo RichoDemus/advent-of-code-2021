@@ -5,8 +5,17 @@ fn part1(bits: &str) -> u64 {
     sum_version_numbers(bits.clone()).0
 }
 
+#[aoc(day16, part2)]
+fn part2(bits: &str) -> u64 {
+    let mut bits = bits.lines().next().unwrap().chars().flat_map(hex_to_binary).collect::<Vec<_>>();
+
+    sum_version_numbers(bits.clone()).2
+}
+
+type PacketVersion = u64;
 type PacketLength = usize;
-fn sum_version_numbers(bits: Vec<u8>) -> (u64, PacketLength) {
+type PacketValue = u64;
+fn sum_version_numbers(bits: Vec<u8>) -> (PacketVersion, PacketLength, PacketValue) {
     let version_number = parse_version(&bits);
 
     let operator = parse_packet_type(&bits);
@@ -19,11 +28,13 @@ fn sum_version_numbers(bits: Vec<u8>) -> (u64, PacketLength) {
             let (literal, length) = parse_literal(&bits);
             let length = length + 6;
             println!("\tLiteral value: {}, total pkg length: {}", literal, length);
-            return (version_number, length);
+            return (version_number, length, literal);
         },
-        _ => {
+        type_id => {
             // operator
             let length_type = parse_length_type_id(&bits);
+            let mut sub_packets:Vec<(PacketVersion, PacketLength, PacketValue)> = vec![];
+            let mut extra_length = 0;
             match length_type {
                 0 => {
                     // length based
@@ -35,7 +46,7 @@ fn sum_version_numbers(bits: Vec<u8>) -> (u64, PacketLength) {
                     let mut sub_package_version_sum = 0;
                     let mut sum_length = 0;
                     while sum_length < sub_packet_length {
-                        let (v, l) = sum_version_numbers(sub_package_bits.clone());
+                        let (v, l, value) = sum_version_numbers(sub_package_bits.clone());
                         if l == 0 {
                             println!("time to break, length is {}", sum_length);
                             break;
@@ -43,8 +54,9 @@ fn sum_version_numbers(bits: Vec<u8>) -> (u64, PacketLength) {
                         sub_package_version_sum += v;
                         sum_length += l;
                         sub_package_bits = sub_package_bits[l..].to_vec();
+                        sub_packets.push((v, l, value));
                     }
-                    return (sub_package_version_sum + version_number, sum_length + 22)
+                    extra_length = 22;
                 },
                 1 => {
                     // num packets based
@@ -53,20 +65,71 @@ fn sum_version_numbers(bits: Vec<u8>) -> (u64, PacketLength) {
                     let mut sum_length = 0;
                     let mut sub_package_bits = bits[18..].to_vec();
                     for _ in 0..number_of_sub_packets {
-                        let (v, l) = sum_version_numbers(sub_package_bits.clone());
+                        let (v, l, value) = sum_version_numbers(sub_package_bits.clone());
                         sub_package_version_sum += v;
                         sum_length += l;
                         sub_package_bits = sub_package_bits[l..].to_vec();
+                        sub_packets.push((v, l, value));
                     }
-                    return (sub_package_version_sum + version_number, sum_length + 18)
+                    extra_length = 18;
                 },
+                _ => panic!("not supported"),
+            }
+            // lets process the packages
+            let total_length = extra_length + sub_packets.iter().map(|(_,length,_)|length).sum::<PacketLength>();
+            let total_version = sub_packets.iter().map(|(v,_,_)|v).sum::<PacketVersion>();
+            match type_id {
+            0 => {
+                //sum
+                let value = sub_packets.into_iter().map(|(_, _, value)| value).sum::<PacketValue>();
+                return (total_version + version_number, total_length, value )
+            },
+            1 => {
+                // product
+                let value = sub_packets.into_iter().map(|(_, _, value)| value).product::<PacketValue>();
+                return (total_version + version_number, total_length, value )
+            },
+            2 => {
+                // min
+                let value = sub_packets.into_iter().map(|(_, _, value)| value).min().unwrap();
+                return (total_version + version_number, total_length, value )
+            },
+            3 => {
+                // max
+                let value = sub_packets.into_iter().map(|(_, _, value)| value).max().unwrap();
+                return (total_version + version_number, total_length, value )
+            },
+            5 => {
+                // greater than
+                let value = if sub_packets[0].2 > sub_packets[1].2 {
+                    1
+                } else {
+                    0
+                };
+                return (total_version + version_number, total_length, value )
+            },
+            6 => {
+// less than
+                let value = if sub_packets[0].2 < sub_packets[1].2 {
+                    1
+                } else {
+                   0
+                };
+                return (total_version + version_number, total_length, value )
+            },
+            7 => {
+                // eq
+                let value = if sub_packets[0].2 == sub_packets[1].2 {
+                    1
+                } else {
+                    0
+                };
+                return (total_version + version_number, total_length, value )
+            },
                 _ => panic!("not supported"),
             }
         },
     }
-
-
-    todo!()
 }
 
 // #[aoc(day16, part2)]
@@ -173,14 +236,16 @@ mod tests {
 #[test]
     fn verify_part1() {
         let input = include_str!("../input/2021/day16.txt");
-        assert_eq!(part1(input), 6666);
+        assert_eq!(part1(input), 963);
     }
 
-    // #[test]
-    // fn verify_part2() {
-    //     let input = include_str!("../input/2021/day16.txt");
-    //     assert_eq!(part2(parse_input(input).as_slice()), 19081);
-    // }
+    #[test]
+    fn verify_part2() {
+        let input = include_str!("../input/2021/day16.txt");
+        let result = part2(input);
+        assert_eq!(result, 1549026292886);
+        // assert_eq!(part2(parse_input(input).as_slice()), 19081);
+    }
 
     #[test]
     fn small_test_literal() {
@@ -324,14 +389,14 @@ mod tests {
     #[test]
     fn test_parse_literal() {
         let bits =  "D2FE28".chars().flat_map(hex_to_binary).collect::<Vec<_>>();
-        let (version, length) = sum_version_numbers(bits.clone());
+        let (version, length,_) = sum_version_numbers(bits.clone());
         assert_eq!(version, 6);
         assert_eq!(length, 21);
     }
 
     #[test]
     fn test_parse_literal_from_inside_pkg() {
-        let (version, length) = sum_version_numbers(vec![1,1,0,1,0,0,0,1,0,1,0,0,1,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0]);
+        let (version, length,_) = sum_version_numbers(vec![1,1,0,1,0,0,0,1,0,1,0,0,1,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0]);
         assert_eq!(version, 6);
         assert_eq!(length, 11);
     }
@@ -339,7 +404,7 @@ mod tests {
     #[test]
     fn test_parse_type_0() {
         let bits =  "38006F45291200".chars().flat_map(hex_to_binary).collect::<Vec<_>>();
-        let (version, length) = sum_version_numbers(bits.clone());
+        let (version, length,_) = sum_version_numbers(bits.clone());
         assert_eq!(version, 1+6+2);
         assert_eq!(length, 49);
     }
@@ -347,7 +412,7 @@ mod tests {
     #[test]
     fn test_parse_type_1() {
         let bits =  "EE00D40C823060".chars().flat_map(hex_to_binary).collect::<Vec<_>>();
-        let (version, length) = sum_version_numbers(bits.clone());
+        let (version, length,_) = sum_version_numbers(bits.clone());
         assert_eq!(version, 7+2+4+1);
         assert_eq!(length, 51);
     }
@@ -361,5 +426,14 @@ mod tests {
     }
 
     #[test]
-    fn part2_provided_example() {}
+    fn part2_provided_example() {
+        assert_eq!(part2("C200B40A82"),3, "1");
+        assert_eq!(part2("04005AC33890"),54, "2");
+        assert_eq!(part2("880086C3E88112"),7, "3");
+        assert_eq!(part2("CE00C43D881120"),9, "4");
+        assert_eq!(part2("D8005AC2A8F0"),1, "5");
+        assert_eq!(part2("F600BC2D8F"),0, "6");
+        assert_eq!(part2("9C005AC2F8F0"),0, "7");
+        assert_eq!(part2("9C0141080250320F1802104A08"),1, "8");
+    }
 }
