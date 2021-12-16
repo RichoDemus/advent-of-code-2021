@@ -52,11 +52,6 @@ impl<V: FromStr + std::fmt::Display + std::fmt::Debug> Grid<V> {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn size(&self) -> u64 {
-        (self.x_max() + 1) as u64 * (self.y_max() + 1) as u64
-    }
-
-    #[allow(dead_code)]
     pub(crate) fn is_within_bounds(&self, x: i64, y: i64) -> bool {
         let x_min = *self.grid.keys().map(|(x, _y)| x).min().unwrap();
         let x_max = *self.grid.keys().map(|(x, _y)| x).max().unwrap();

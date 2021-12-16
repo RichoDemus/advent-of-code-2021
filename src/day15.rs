@@ -1,5 +1,6 @@
-use crate::grid::Grid;
 use std::collections::HashMap;
+
+use crate::grid::Grid;
 
 #[aoc_generator(day15)]
 fn parse_input(input: &str) -> Vec<Vec<u32>> {
@@ -21,33 +22,38 @@ fn part1(input: &[Vec<u32>]) -> u32 {
     find_least_risky_path(cave)
 }
 
+#[allow(
+    clippy::cast_sign_loss,
+    clippy::cast_possible_wrap,
+    clippy::cast_possible_truncation
+)]
 fn find_least_risky_path(mut cave: Vec<Vec<u32>>) -> u32 {
     cave[0][0] = 0;
-    let startx: i32 = 0;
-    let starty: i32 = 0;
+    let start_x: i32 = 0;
+    let start_y: i32 = 0;
 
-    let endx: i32 = cave.len() as i32 - 1;
-    let endy: i32 = cave.len() as i32 - 1;
+    let end_x: i32 = cave.len() as i32 - 1;
+    let end_y: i32 = cave.len() as i32 - 1;
     println!(
         "Want to move from {},{} to {},{}",
-        startx, starty, endx, endy
+        start_x, start_y, end_x, end_y
     );
 
     let result = pathfinding::prelude::dijkstra(
-        &(startx, starty),
+        &(start_x, start_y),
         |(x, y)| {
             let mut neighbours = vec![];
-            for (nx, ny) in vec![(*x + 1, *y), (*x, *y + 1), (*x - 1, *y), (*x, y - 1)] {
+            for (nx, ny) in [(*x + 1, *y), (*x, *y + 1), (*x - 1, *y), (*x, y - 1)] {
                 if nx < 0 {
                     continue;
                 }
                 if ny < 0 {
                     continue;
                 }
-                if ny > endy {
+                if ny > end_y {
                     continue;
                 }
-                if nx > endx {
+                if nx > end_x {
                     continue;
                 }
 
@@ -56,23 +62,23 @@ fn find_least_risky_path(mut cave: Vec<Vec<u32>>) -> u32 {
             }
             neighbours
         },
-        |(x, y)| *x == endx && *y == endy,
+        |(x, y)| *x == end_x && *y == end_y,
     );
 
-    return result.unwrap().1;
+    result.unwrap().1
 }
 
 #[aoc(day15, part2, djikstra)]
-fn part2(input: &[Vec<u32>]) -> u32 {
-    let cave = input.to_vec();
+fn part2(cave: &[Vec<u32>]) -> u32 {
     let mut cave = expand_grid_wrapper(cave);
 
     cave[0][0] = 0;
-    return find_least_risky_path(cave);
+    find_least_risky_path(cave)
 }
 
 // todo revamp this to not convert to and from grid
-fn expand_grid_wrapper(input: Vec<Vec<u32>>) -> Vec<Vec<u32>> {
+#[allow(clippy::cast_lossless, clippy::cast_possible_truncation)]
+fn expand_grid_wrapper(input: &[Vec<u32>]) -> Vec<Vec<u32>> {
     let mut cave_map = HashMap::new();
     for (y, row) in input.iter().enumerate() {
         for (x, cell) in row.iter().enumerate() {
@@ -93,7 +99,7 @@ fn expand_grid_wrapper(input: Vec<Vec<u32>>) -> Vec<Vec<u32>> {
     for y in y_min..=y_max {
         let mut row = vec![];
         for x in x_min..=x_max {
-            row.push(*grid.grid.get(&(x, y)).unwrap() as u32);
+            row.push(u32::from(*grid.grid.get(&(x, y)).unwrap()));
         }
         matrix.push(row);
     }
@@ -101,6 +107,7 @@ fn expand_grid_wrapper(input: Vec<Vec<u32>>) -> Vec<Vec<u32>> {
     matrix
 }
 
+#[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 fn expand_grid2(mut expand_grid: Grid<u8>) -> Grid<u8> {
     let x_width = expand_grid.x_max() as u32 + 1;
     let y_width = expand_grid.y_max() as u32 + 1;
@@ -108,14 +115,14 @@ fn expand_grid2(mut expand_grid: Grid<u8>) -> Grid<u8> {
     let mut new_nodes = HashMap::new();
     for board_x in 0..=4 {
         for board_y in 0..=4 {
-            for ((gx, gy), value) in expand_grid.grid.iter() {
+            for ((gx, gy), value) in &expand_grid.grid {
                 let value = *value;
                 let mut value = value + board_x + board_y;
                 while value > 9 {
                     value -= 9;
                 }
-                let new_x = *gx as u32 + board_x as u32 * x_width;
-                let new_y = *gy as u32 + board_y as u32 * y_width;
+                let new_x = *gx as u32 + u32::from(board_x) * x_width;
+                let new_y = *gy as u32 + u32::from(board_y) * y_width;
                 new_nodes.insert((new_x, new_y), value);
             }
         }
