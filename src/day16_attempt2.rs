@@ -1,25 +1,12 @@
-use std::borrow::Borrow;
+#![allow(clippy::all)]
+
 use ouroboros::self_referencing;
 
-use crate::day16::{bits_to_dec, hex_to_binary, parse_literal_value};
+use crate::day16::{bits_to_dec, hex_to_binary};
 
+#[allow(clippy::all)]
 #[self_referencing]
-struct VecAndSlice {
-    v: Vec<i32>,
-    #[borrows(v)]
-    s: &'this [i32],
-}
-
-fn create() -> VecAndSlice {
-    let vec = vec![1, 2, 3];
-    let slice = vec.as_slice();
-    VecAndSliceBuilder {
-        v: vec,
-        s_builder: |v| v.as_slice(),
-    }.build()
-}
-
-#[self_referencing]
+#[allow(clippy::all)]
 struct RPacket {
     bits: Vec<u8>,
     #[borrows(bits)]
@@ -29,12 +16,12 @@ struct RPacket {
 
 struct OPacket<'a> {
     bits: &'a [u8],
-     start: usize,
+    start: usize,
 }
 
- struct LPacket<'a> {
-     bits: &'a [u8],
-     start: usize,
+struct LPacket<'a> {
+    bits: &'a [u8],
+    start: usize,
 }
 
 impl LPacket<'_> {
@@ -45,52 +32,58 @@ impl LPacket<'_> {
 }
 
 enum Packet<'a> {
-    RootPacket(RPacket),
-    OpPacket(OPacket<'a>),
-    LiteralPacket(LPacket<'a>),
+    Root(RPacket),
+    Operator(OPacket<'a>),
+    Literal(LPacket<'a>),
 }
 
 impl<'a> Packet<'a> {
     fn from_hex(hex_string: &str) -> Packet<'a> {
-        let bits: Vec<u8> = hex_string.chars().flat_map(hex_to_binary).collect::<Vec<_>>();
+        let bits: Vec<u8> = hex_string
+            .chars()
+            .flat_map(hex_to_binary)
+            .collect::<Vec<_>>();
         println!("bits: {:?}", bits);
-        Packet::RootPacket(RPacketBuilder {
-            bits,
-            packet_builder: |bits| Box::new(Packet::from_bits(bits.as_slice(),0)),
-        }.build())
+        Packet::Root(
+            RPacketBuilder {
+                bits,
+                packet_builder: |bits| Box::new(Packet::from_bits(bits.as_slice(), 0)),
+            }
+            .build(),
+        )
     }
     fn from_bits(bits: &[u8], start: usize) -> Packet {
-        let type_bits = &bits[start+3..start+6];
+        let type_bits = &bits[start + 3..start + 6];
         let type_id = bits_to_dec(type_bits);
         if type_id == 4 {
-            Packet::LiteralPacket(LPacket{ bits, start })
+            Packet::Literal(LPacket { bits, start })
         } else {
-            Packet::OpPacket(OPacket{ bits, start })
+            Packet::Operator(OPacket { bits, start })
         }
     }
-    fn bits_start(&'a self) -> (&'a[u8], usize) {
+    fn bits_start(&'a self) -> (&'a [u8], usize) {
         match self {
-            Packet::RootPacket(p) => (p.borrow_bits().as_slice(), 0),
-            Packet::OpPacket(p) => (p.bits, p.start),
-            Packet::LiteralPacket(p) => (p.bits, p.start),
+            Packet::Root(p) => (p.borrow_bits().as_slice(), 0),
+            Packet::Operator(p) => (p.bits, p.start),
+            Packet::Literal(p) => (p.bits, p.start),
         }
     }
 
     fn version(&self) -> u64 {
         let (bits, start) = self.bits_start();
-        let version_bits = &bits[start..start+3];
+        let version_bits = &bits[start..start + 3];
         bits_to_dec(version_bits)
     }
     fn type_id(&self) -> u64 {
         let (bits, start) = self.bits_start();
-        let type_id_bits = &bits[start+3..start+6];
+        let type_id_bits = &bits[start + 3..start + 6];
         bits_to_dec(type_id_bits)
     }
     fn value(&self) -> u64 {
         match self {
-            Packet::RootPacket(r) => r.borrow_packet().value(),
-            Packet::LiteralPacket(l) => l.value(),
-            Packet::OpPacket(_) => todo!(),
+            Packet::Root(r) => r.borrow_packet().value(),
+            Packet::Literal(l) => l.value(),
+            Packet::Operator(_) => todo!(),
         }
     }
 }
@@ -99,7 +92,7 @@ fn parse_literal_value2(packet: &[u8], start: usize) -> (u64, usize) {
     let mut length = 0;
     let mut bits = vec![];
     let mut last_chunk = false;
-    for chunk in packet[start+6..].chunks(5) {
+    for chunk in packet[start + 6..].chunks(5) {
         if last_chunk {
             break;
         }

@@ -120,9 +120,27 @@ fn calculate_subpackets_value(type_id: u64, sub_packets: Vec<Packet>) -> u64 {
             .map(|packet| packet.value)
             .max()
             .unwrap(),
-        5 => if sub_packets[0].value > sub_packets[1].value { 1 } else { 0 },
-        6 => if sub_packets[0].value < sub_packets[1].value { 1 } else { 0 },
-        7 => if sub_packets[0].value == sub_packets[1].value { 1 } else { 0 },
+        5 => {
+            if sub_packets[0].value > sub_packets[1].value {
+                1
+            } else {
+                0
+            }
+        }
+        6 => {
+            if sub_packets[0].value < sub_packets[1].value {
+                1
+            } else {
+                0
+            }
+        }
+        7 => {
+            if sub_packets[0].value == sub_packets[1].value {
+                1
+            } else {
+                0
+            }
+        }
         _ => panic!("not supported"),
     }
 }
@@ -194,8 +212,6 @@ pub fn parse_literal_value(packet: &[u8]) -> (u64, usize) {
     (bits_to_dec(bits.as_slice()), length)
 }
 
-
-
 pub fn bits_to_dec(bits: &[u8]) -> u64 {
     let mut s = String::new();
     for b in bits {
@@ -203,8 +219,6 @@ pub fn bits_to_dec(bits: &[u8]) -> u64 {
     }
     u64::from_str_radix(s.as_str(), 2).unwrap_or_else(|_| panic!("Unable to parse {:?}", bits))
 }
-
-
 
 #[cfg(test)]
 mod tests {
