@@ -8,7 +8,8 @@ fn part1(bits: &str) -> u64 {
         .flat_map(hex_to_binary)
         .collect::<Vec<_>>();
     let bits = bits.as_slice();
-    sum_version_numbers(bits).version
+    let packet = parse_packet(bits);
+    packet.version
 }
 
 #[aoc(day16, part2)]
@@ -21,7 +22,7 @@ fn part2(bits: &str) -> u64 {
         .flat_map(hex_to_binary)
         .collect::<Vec<_>>();
     let bits = bits.as_slice();
-    sum_version_numbers(bits).value
+    parse_packet(bits).value
 }
 
 struct Packet {
@@ -30,7 +31,7 @@ struct Packet {
     value: u64,
 }
 
-fn sum_version_numbers(bits: &[u8]) -> Packet {
+fn parse_packet(bits: &[u8]) -> Packet {
     let version_number = parse_version(bits);
 
     let operator = parse_packet_type(bits);
@@ -40,13 +41,13 @@ fn sum_version_numbers(bits: &[u8]) -> Packet {
         4 => {
             // literal
             // don't need to do anything right now
-            let (literal, length) = parse_literal(bits);
+            let (value, length) = parse_literal_value(bits);
             let length = length + 6;
-            println!("\tLiteral value: {}, total pkg length: {}", literal, length);
+            println!("\tLiteral value: {}, total pkg length: {}", value, length);
             Packet {
                 version: version_number,
                 length,
-                value: literal,
+                value,
             }
         }
         type_id => {
@@ -68,7 +69,7 @@ fn sum_version_numbers(bits: &[u8]) -> Packet {
                     println!("{} bytes left", sub_package_bits.len());
                     let mut sum_length = 0;
                     while sum_length < sub_packet_length {
-                        let packet = sum_version_numbers(sub_package_bits);
+                        let packet = parse_packet(sub_package_bits);
                         sum_length += packet.length;
                         sub_package_bits = &sub_package_bits[packet.length..];
                         sub_packets.push(packet);
@@ -80,7 +81,7 @@ fn sum_version_numbers(bits: &[u8]) -> Packet {
                     let number_of_sub_packets = parse_sub_packet_length_type_1(bits);
                     let mut sub_package_bits = &bits[18..];
                     for _ in 0..number_of_sub_packets {
-                        let packet = sum_version_numbers(sub_package_bits);
+                        let packet = parse_packet(sub_package_bits);
                         sub_package_bits = &sub_package_bits[packet.length..];
                         sub_packets.push(packet);
                     }
@@ -119,32 +120,14 @@ fn calculate_subpackets_value(type_id: u64, sub_packets: Vec<Packet>) -> u64 {
             .map(|packet| packet.value)
             .max()
             .unwrap(),
-        5 => {
-            if sub_packets[0].value > sub_packets[1].value {
-                1
-            } else {
-                0
-            }
-        }
-        6 => {
-            if sub_packets[0].value < sub_packets[1].value {
-                1
-            } else {
-                0
-            }
-        }
-        7 => {
-            if sub_packets[0].value == sub_packets[1].value {
-                1
-            } else {
-                0
-            }
-        }
+        5 => if sub_packets[0].value > sub_packets[1].value { 1 } else { 0 },
+        6 => if sub_packets[0].value < sub_packets[1].value { 1 } else { 0 },
+        7 => if sub_packets[0].value == sub_packets[1].value { 1 } else { 0 },
         _ => panic!("not supported"),
     }
 }
 
-fn hex_to_binary(hex: char) -> [u8; 4] {
+pub fn hex_to_binary(hex: char) -> [u8; 4] {
     match hex {
         '0' => [0, 0, 0, 0],
         '1' => [0, 0, 0, 1],
@@ -166,12 +149,12 @@ fn hex_to_binary(hex: char) -> [u8; 4] {
     }
 }
 
-fn parse_version(packet: &[u8]) -> u64 {
+pub fn parse_version(packet: &[u8]) -> u64 {
     let version = &packet[0..3];
     bits_to_dec(version)
 }
 
-fn parse_packet_type(packet: &[u8]) -> u64 {
+pub fn parse_packet_type(packet: &[u8]) -> u64 {
     let t = &packet[3..6];
     bits_to_dec(t)
 }
@@ -192,36 +175,36 @@ fn parse_sub_packet_length_type_1(packet: &[u8]) -> u64 {
     bits_to_dec(t)
 }
 
-fn parse_literal(packet: &[u8]) -> (u64, usize) {
+pub fn parse_literal_value(packet: &[u8]) -> (u64, usize) {
     let mut length = 0;
     let mut bits = vec![];
     let mut last_chunk = false;
     for chunk in packet[6..].chunks(5) {
-        // println!("\tprocessing chunk: {:?}, length is {}", chunk, length);
         if last_chunk {
-            // length += chunk.len();
             break;
         }
         length += chunk.len();
         for chunk in chunk.iter().take(5).skip(1) {
             bits.push(*chunk);
-            // length += 1;
         }
         if chunk[0] == 0 {
-            // length += chunk.len();
             last_chunk = true;
         }
     }
     (bits_to_dec(bits.as_slice()), length)
 }
 
-fn bits_to_dec(bits: &[u8]) -> u64 {
+
+
+pub fn bits_to_dec(bits: &[u8]) -> u64 {
     let mut s = String::new();
     for b in bits {
         s += b.to_string().as_str();
     }
     u64::from_str_radix(s.as_str(), 2).unwrap_or_else(|_| panic!("Unable to parse {:?}", bits))
 }
+
+
 
 #[cfg(test)]
 mod tests {
@@ -255,7 +238,7 @@ mod tests {
         println!("packet type: {}", packet_type);
         assert_eq!(packet_type, 4, "4 = literal");
 
-        let (literal, length) = parse_literal(&bits);
+        let (literal, length) = parse_literal_value(&bits);
         println!("literal value: {}", literal);
         println!("literal bytes length {}", length);
         assert_eq!(literal, 2021);
@@ -293,7 +276,7 @@ mod tests {
         println!("packet type: {}", packet_type);
         assert_eq!(packet_type, 4, "4 = literal");
 
-        let literal = parse_literal(&bits).0;
+        let literal = parse_literal_value(&bits).0;
         println!("literal value: {}", literal);
         assert_eq!(literal, 10);
 
@@ -307,7 +290,7 @@ mod tests {
         println!("packet type: {}", packet_type);
         assert_eq!(packet_type, 4, "4 = literal");
 
-        let literal = parse_literal(&bits).0;
+        let literal = parse_literal_value(&bits).0;
         println!("literal value: {}", literal);
         assert_eq!(literal, 20);
     }
@@ -344,7 +327,7 @@ mod tests {
         println!("packet type: {}", packet_type);
         assert_eq!(packet_type, 4, "4 = literal");
 
-        let literal = parse_literal(&bits).0;
+        let literal = parse_literal_value(&bits).0;
         println!("literal value: {}", literal);
         assert_eq!(literal, 1);
 
@@ -359,7 +342,7 @@ mod tests {
         println!("packet type: {}", packet_type);
         assert_eq!(packet_type, 4, "4 = literal");
 
-        let literal = parse_literal(&bits).0;
+        let literal = parse_literal_value(&bits).0;
         println!("literal value: {}", literal);
         assert_eq!(literal, 2);
 
@@ -374,7 +357,7 @@ mod tests {
         println!("packet type: {}", packet_type);
         assert_eq!(packet_type, 4, "4 = literal");
 
-        let literal = parse_literal(&bits).0;
+        let literal = parse_literal_value(&bits).0;
         println!("literal value: {}", literal);
         assert_eq!(literal, 3);
     }
@@ -386,7 +369,7 @@ mod tests {
             version,
             length,
             value: _,
-        } = sum_version_numbers(bits.as_slice());
+        } = parse_packet(bits.as_slice());
         assert_eq!(version, 6);
         assert_eq!(length, 21);
     }
@@ -401,7 +384,7 @@ mod tests {
             version,
             length,
             value: _,
-        } = sum_version_numbers(input.as_slice());
+        } = parse_packet(input.as_slice());
         assert_eq!(version, 6);
         assert_eq!(length, 11);
     }
@@ -416,7 +399,7 @@ mod tests {
             version,
             length,
             value: _,
-        } = sum_version_numbers(bits.as_slice());
+        } = parse_packet(bits.as_slice());
         assert_eq!(version, 1 + 6 + 2);
         assert_eq!(length, 49);
     }
@@ -431,7 +414,7 @@ mod tests {
             version,
             length,
             value: _,
-        } = sum_version_numbers(bits.as_slice());
+        } = parse_packet(bits.as_slice());
         assert_eq!(version, 7 + 2 + 4 + 1);
         assert_eq!(length, 51);
     }
