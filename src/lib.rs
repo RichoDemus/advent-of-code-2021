@@ -23,5 +23,6 @@ mod day16_attempt2;
 mod day17;
 mod grid;
 mod day18;
+mod day19;
 
 aoc_lib! { year = 2021 }
